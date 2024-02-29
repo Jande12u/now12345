@@ -12,9 +12,6 @@ github repository: https://github.com/gbaranski/quizizz-cheat
 email: root@gbaranski.com
 */
 
-
-
-
 import { VueElement, QuizQuestion, QuizInfo } from "./types";
 
 const getQuestionsElement = () => {
@@ -64,12 +61,15 @@ const getQuestionInfo = (): {
   if (!rootObject) throw new Error("Could not retrieve root object");
   const vue = rootObject.__vue__;
 
+  const gameState = vue?.$store?._vm?._data?.$$state?.game;
+  if (!gameState) throw new Error("Game state not found");
+
   return { 
-    roomHash:   vue.$store._vm._data.$$state.game.data.roomHash, 
-    playerId:   vue.$store._vm._data.$$state.game.player.playerId, 
-    quizID:     vue.$store._vm._data.$$state.game.data.quizId,
-    roomCode:   vue.$store._vm._data.$$state.game.data.roomCode,
-    questionID: vue.$store._vm._data.$$state.game.questions.currentId,
+    roomHash:   gameState.data.roomHash || "", 
+    playerId:   gameState.player.playerId || "", 
+    quizID:     gameState.data.quizId || "",
+    roomCode:   gameState.data.roomCode || "",
+    questionID: gameState.questions.currentId || "",
   };
 };
 
@@ -78,14 +78,16 @@ const getRoomHash = (): string => {
   if (!rootObject) throw new Error("Could not retrieve root object");
   const vue = rootObject.__vue__;
 
-  return vue.$store._vm._data.$$state.game.data.roomHash;
+  const roomHash = vue?.$store?._vm?._data?.$$state?.game?.data?.roomHash;
+  if (!roomHash) throw new Error("Room hash not found");
+
+  return roomHash;
 }
 
 const msg = `%c 
     Script created by gbaranski#5119! 
     https://github.com/gbaranski/quizizz-cheat
       `;
-
 
 (async () => {
   console.log(msg, "color: red;");
