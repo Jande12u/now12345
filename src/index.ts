@@ -1,18 +1,7 @@
-/*
-Quizizz-cheat
-Copyright (C) gbaranski
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-github repository: https://github.com/gbaranski/quizizz-cheat
-email: root@gbaranski.com
-*/
-
 import { VueElement, QuizQuestion, QuizInfo } from "./types";
+
+  console.log("heelo";
+
 
 const getQuestionsElement = () => {
   const questionsElem = document.querySelector(
@@ -42,7 +31,7 @@ const highlightAnswers = (question: QuizQuestion) => {
   arr.filter((e) => {
     if (Array.isArray(question.structure.answer) && question.structure.answer.length > 0) {
       return !(question.structure.answer.some((ansID) => e.__vue__.optionData.actualIndex === ansID));
-    } else if (typeof question.structure.answer == "number") {
+    } else if(typeof question.structure.answer == "number") {
       return e.__vue__.optionData.actualIndex !== question.structure.answer
     } else {
       console.error("Fail detecting type of question: ", question);
@@ -60,13 +49,9 @@ const getQuestionInfo = (): {
   const rootObject = document.querySelector("body > div") as VueElement | null;
   if (!rootObject) throw new Error("Could not retrieve root object");
   const vue = rootObject.__vue__;
-  
-  console.log("Vue object:", vue);
 
-  if (!vue.$store) {
-    console.error("$store is undefined in Vue object:", vue);
-    throw new Error("$store is undefined");
-  }
+  console.log("Vue instance:", vue);
+  console.log("$store:", vue.$store);
 
   return { 
     roomHash:   vue.$store._vm._data.$$state.game.data.roomHash, 
@@ -90,27 +75,25 @@ const msg = `%c
     https://github.com/gbaranski/quizizz-cheat
       `;
 
+
 (async () => {
   console.log(msg, "color: red;");
 
-  try {
-    const quiz: QuizInfo = await (await fetch(`https://quizizz.com/_api/main/game/${getRoomHash()}`)).json();
-  
-    let lastQuestionID: string | undefined = undefined;
-  
-    setInterval(() => {
-      const questionInfo = getQuestionInfo();
-      if (questionInfo.questionID !== lastQuestionID) {
-        for (const q of quiz.data.questions) {
-          if (questionInfo.questionID === q._id) {
-            console.log({q});
-            highlightAnswers(q);
-            lastQuestionID = questionInfo.questionID;
-          }
+  const quiz: QuizInfo = await (await fetch(`https://quizizz.com/_api/main/game/${getRoomHash()}`)).json();
+
+  let lastQuestionID: string | undefined = undefined;
+
+  setInterval(() => {
+    const questionInfo = getQuestionInfo();
+    if (questionInfo.questionID !== lastQuestionID) {
+      for (const q of quiz.data.questions) {
+        if (questionInfo.questionID === q._id) {
+          console.log({q});
+          highlightAnswers(q);
+          lastQuestionID = questionInfo.questionID;
         }
       }
-    }, 500);
-  } catch (error) {
-    console.error("An error occurred:", error);
-  }
+    }
+  }, 500)
+
 })();
