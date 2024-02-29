@@ -19,7 +19,7 @@ const getQuestionsElement = () => {
     "body > div > div.root-component > div > div > div > div.page-container.in-quiz > div.screen.screen-game > div.transitioner.transitioner-component > div > div > div > div > div > div.options-container > div"
   );
   if (!questionsElem)
-    throw new Error("Unable to retreive questions list element");
+    throw new Error("Unable to retrieve questions list element");
 
   return questionsElem;
 };
@@ -42,7 +42,7 @@ const highlightAnswers = (question: QuizQuestion) => {
   arr.filter((e) => {
     if (Array.isArray(question.structure.answer) && question.structure.answer.length > 0) {
       return !(question.structure.answer.some((ansID) => e.__vue__.optionData.actualIndex === ansID));
-    } else if(typeof question.structure.answer == "number") {
+    } else if (typeof question.structure.answer == "number") {
       return e.__vue__.optionData.actualIndex !== question.structure.answer
     } else {
       console.error("Fail detecting type of question: ", question);
@@ -60,16 +60,20 @@ const getQuestionInfo = (): {
   const rootObject = document.querySelector("body > div") as VueElement | null;
   if (!rootObject) throw new Error("Could not retrieve root object");
   const vue = rootObject.__vue__;
+  
+  console.log("Vue object:", vue);
 
-  const gameState = vue?.$store?._vm?._data?.$$state?.game;
-  if (!gameState) throw new Error("Game state not found");
+  if (!vue.$store) {
+    console.error("$store is undefined in Vue object:", vue);
+    throw new Error("$store is undefined");
+  }
 
   return { 
-    roomHash:   gameState.data.roomHash || "", 
-    playerId:   gameState.player.playerId || "", 
-    quizID:     gameState.data.quizId || "",
-    roomCode:   gameState.data.roomCode || "",
-    questionID: gameState.questions.currentId || "",
+    roomHash:   vue.$store._vm._data.$$state.game.data.roomHash, 
+    playerId:   vue.$store._vm._data.$$state.game.player.playerId, 
+    quizID:     vue.$store._vm._data.$$state.game.data.quizId,
+    roomCode:   vue.$store._vm._data.$$state.game.data.roomCode,
+    questionID: vue.$store._vm._data.$$state.game.questions.currentId,
   };
 };
 
@@ -78,10 +82,7 @@ const getRoomHash = (): string => {
   if (!rootObject) throw new Error("Could not retrieve root object");
   const vue = rootObject.__vue__;
 
-  const roomHash = vue?.$store?._vm?._data?.$$state?.game?.data?.roomHash;
-  if (!roomHash) throw new Error("Room hash not found");
-
-  return roomHash;
+  return vue.$store._vm._data.$$state.game.data.roomHash;
 }
 
 const msg = `%c 
@@ -92,21 +93,24 @@ const msg = `%c
 (async () => {
   console.log(msg, "color: red;");
 
-  const quiz: QuizInfo = await (await fetch(`https://quizizz.com/_api/main/game/${getRoomHash()}`)).json();
-
-  let lastQuestionID: string | undefined = undefined;
-
-  setInterval(() => {
-    const questionInfo = getQuestionInfo();
-    if (questionInfo.questionID !== lastQuestionID) {
-      for (const q of quiz.data.questions) {
-        if (questionInfo.questionID === q._id) {
-          console.log({q});
-          highlightAnswers(q);
-          lastQuestionID = questionInfo.questionID;
+  try {
+    const quiz: QuizInfo = await (await fetch(`https://quizizz.com/_api/main/game/${getRoomHash()}`)).json();
+  
+    let lastQuestionID: string | undefined = undefined;
+  
+    setInterval(() => {
+      const questionInfo = getQuestionInfo();
+      if (questionInfo.questionID !== lastQuestionID) {
+        for (const q of quiz.data.questions) {
+          if (questionInfo.questionID === q._id) {
+            console.log({q});
+            highlightAnswers(q);
+            lastQuestionID = questionInfo.questionID;
+          }
         }
       }
-    }
-  }, 500)
-
+    }, 500);
+  } catch (error) {
+    console.error("An error occurred:", error);
+  }
 })();
